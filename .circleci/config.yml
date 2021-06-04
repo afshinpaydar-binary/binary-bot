@@ -68,15 +68,18 @@ commands:
       - run:
           name: Install and configure dependencies
           command: |
-            sudo npm install -g gh-pages@2.0.1
+            mkdir "${HOME}/.npm-packages"
+            npm config set prefix "${HOME}/.npm-packages"
+            npm i -g gh-pages
             git config user.email "ci-build@binary.com"
             git config user.name "ci-build"
       - add_ssh_keys:
           fingerprints:
             - "01:67:4a:6d:26:9c:70:c4:1a:60:91:88:d9:dd:f0:83"
-      #- run:
-      #    name: Deploy docs to gh-pages branch
-      #    command: gh-pages -d www --branch << parameters.target_branch >> --message '[skip ci]'
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: /home/circleci/.npm-packages/bin/gh-pages -d www --branch << parameters.target_branch >> --message '[skip ci]'
+          
   docker_build_push:
     description: "Build and Push image to docker hub"
     parameters:
@@ -155,7 +158,7 @@ commands:
 jobs:
   test:
     docker:
-      - image: circleci/node:12.13.0-stretch
+      - image: cimg/node:12.18
     steps:
       - git_checkout_from_cache
       - npm_install
@@ -163,7 +166,7 @@ jobs:
 
   release_staging:
     docker:
-      - image: circleci/node:8.10.0-stretch
+      - image: cimg/node:12.18
     steps:
       - git_checkout_from_cache
       - npm_install
@@ -176,7 +179,8 @@ jobs:
       - notify_slack
   release_production:
     docker:
-      - image: circleci/node:12.13.0-stretch
+      - image: cimg/node:12.18
+
     steps:
       - git_checkout_from_cache
       - npm_install
@@ -209,3 +213,4 @@ workflows:
               ignore: /.*/
             tags:
               only: /^production.*/
+
